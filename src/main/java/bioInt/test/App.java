@@ -4,6 +4,7 @@ import org.canova.api.records.reader.RecordReader;
 import org.canova.api.records.reader.impl.CSVRecordReader;
 import org.canova.api.split.FileSplit;
 import org.deeplearning4j.datasets.canova.RecordReaderDataSetIterator;
+import org.deeplearning4j.datasets.iterator.SamplingDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -28,9 +29,6 @@ public class App {
         DataSetIterator trainIterator = getDataSetIterator("train.csv");
         DataSetIterator validationIterator = getDataSetIterator("validate.csv");
 
-        DataSet trainDataSet = trainIterator.next(10000);
-        DataSet validateDataSet = validationIterator.next(1000);
-
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .layer(new RBM())
                 .nIn(trainIterator.inputColumns())
@@ -41,6 +39,7 @@ public class App {
                 .dist(new UniformDistribution(0, 1))
                 .constrainGradientToUnitNorm(true)
                 .iterations(5)
+                .batchSize(10)
                 .lossFunction(LossFunctions.LossFunction.RMSE_XENT)
                 .learningRate(1e-1f)
                 .momentum(0.9)
@@ -53,11 +52,18 @@ public class App {
 
         MultiLayerNetwork model = new MultiLayerNetwork(conf);
         model.init();
-        model.fit(trainDataSet);
+        model.fit(trainIterator);
+
 
         Evaluation eval = new Evaluation();
-        INDArray predict = model.output(validateDataSet.getFeatureMatrix());
-        eval.eval(validateDataSet.getLabels(), predict);
+
+        while(validationIterator.hasNext())
+        {
+            DataSet validation = validationIterator.next();
+            INDArray predict = model.output(validation.getFeatureMatrix());
+            eval.eval(validation.getLabels(), predict);
+        }
+        
         System.out.printf("Score: %s\n", eval.stats());
     }
 
