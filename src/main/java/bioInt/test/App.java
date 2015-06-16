@@ -16,11 +16,15 @@ import java.io.IOException;
  */
 public class App 
 {
-    public static void main( String[] args ) throws IOException {
+    public static void main( String[] args ) throws IOException, InterruptedException {
         RecordReader recordReader = new CSVRecordReader();
         FileSplit csv = new FileSplit(new ClassPathResource("train.csv").getFile());
-        DataSetIterator iter = new RecordReaderDataSetIterator(recordReader, 2, 0, 2);
-        DataSet next = iter.next();
+        recordReader.initialize(csv);
+        DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 5, 0, 2);
+        DataSet next = iterator.next();
+        System.out.println(next.numInputs());
+        System.out.println(next.numExamples());
+        System.out.println(next.numOutcomes());
         System.out.println(next);
     }
 }
