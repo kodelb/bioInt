@@ -17,10 +17,10 @@ import java.io.IOException;
 public class App 
 {
     public static void main( String[] args ) throws IOException, InterruptedException {
-        RecordReader recordReader = new CSVRecordReader();
-        FileSplit csv = new FileSplit(new ClassPathResource("train.csv").getFile());
+        RecordReader recordReader = new CSVRecordReader(0, ",");
+        FileSplit csv = new FileSplit(new ClassPathResource("validate.csv").getFile());
         recordReader.initialize(csv);
-        DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 5, 0, 2);
+        DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 3, 0, 2);
         DataSet next = iterator.next();
         System.out.println(next.numInputs());
         System.out.println(next.numExamples());
