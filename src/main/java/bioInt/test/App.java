@@ -5,6 +5,7 @@ import org.canova.api.records.reader.impl.CSVRecordReader;
 import org.canova.api.split.FileSplit;
 import org.deeplearning4j.datasets.canova.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.SamplingDataSetIterator;
+import org.deeplearning4j.datasets.test.TestDataSetIterator;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
@@ -46,14 +47,14 @@ public class App {
                 //.momentumAfter(Collections.singletonMap(3, 0.9))
                 //.optimizationAlgo(OptimizationAlgorithm.CONJUGATE_GRADIENT)
                 .list(2)
-                .hiddenLayerSizes(400)
+                .hiddenLayerSizes(100)
+                .useDropConnect(true)
                 .override(1, new ClassifierOverride())
                 .build();
 
         MultiLayerNetwork model = new MultiLayerNetwork(conf);
         model.init();
         model.fit(trainIterator);
-
 
         Evaluation eval = new Evaluation();
 
@@ -63,7 +64,7 @@ public class App {
             INDArray predict = model.output(validation.getFeatureMatrix());
             eval.eval(validation.getLabels(), predict);
         }
-        
+
         System.out.printf("Score: %s\n", eval.stats());
     }
 
