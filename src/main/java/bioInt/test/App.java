@@ -35,8 +35,8 @@ public class App
 	public static void main(String[] args) throws IOException, InterruptedException
 	{
 		final DataSetIterator trainIterator = getDataSetIterator("train.csv");
-		DataSetIterator validationIterator = getDataSetIterator("validate.csv");
-		DataSetIterator testIterator = getDataSetIterator("test.csv");
+		final DataSetIterator validationIterator = getDataSetIterator("validate.csv");
+		final DataSetIterator testIterator = getDataSetIterator("test.csv");
 
 		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .layer(new RBM())
@@ -72,7 +72,8 @@ public class App
 		};
 
 		kernel.execute(8);
-
+		kernel.dispose();
+		
 		Evaluation eval = new Evaluation();
 
 		while (validationIterator.hasNext())
@@ -84,7 +85,7 @@ public class App
 
         System.out.printf("Score: %s\n", eval.stats());
 
-        System.out.println(conf.toJson());
+        //System.out.println(conf.toJson());
 
 		Path newFile = Paths.get(Double.toString(eval.accuracy()));
 		try (BufferedWriter writer = Files.newBufferedWriter(newFile, Charset.defaultCharset()))
@@ -98,6 +99,11 @@ public class App
 					writer.write(predict.getRow(i).toString().trim());
 				}
 			}
+		}
+		catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
     }
 
