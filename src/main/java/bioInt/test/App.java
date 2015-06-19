@@ -1,6 +1,11 @@
 package bioInt.test;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.canova.api.records.reader.RecordReader;
 import org.canova.api.records.reader.impl.CSVRecordReader;
@@ -31,14 +36,29 @@ public class App
 	{
 		final DataSetIterator trainIterator = getDataSetIterator("train.csv");
 		DataSetIterator validationIterator = getDataSetIterator("validate.csv");
+		DataSetIterator testIterator = getDataSetIterator("test.csv");
 
-		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder().layer(new RBM()).nIn(trainIterator.inputColumns())
-				.nOut(trainIterator.totalOutcomes()).visibleUnit(RBM.VisibleUnit.GAUSSIAN).hiddenUnit(RBM.HiddenUnit.RECTIFIED)
-				.weightInit(WeightInit.DISTRIBUTION).dist(new UniformDistribution(0, 1)).constrainGradientToUnitNorm(true).iterations(5)
-				.batchSize(10).lossFunction(LossFunctions.LossFunction.RMSE_XENT).learningRate(1e-1f).momentum(0.9)
-				// .momentumAfter(Collections.singletonMap(3, 0.9))
-				// .optimizationAlgo(OptimizationAlgorithm.CONJUGATE_GRADIENT)
-				.list(2).hiddenLayerSizes(100).useDropConnect(true).override(1, new ClassifierOverride()).build();
+		MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
+                .layer(new RBM())
+                .nIn(trainIterator.inputColumns())
+                .nOut(trainIterator.totalOutcomes())
+                .visibleUnit(RBM.VisibleUnit.GAUSSIAN)
+                .hiddenUnit(RBM.HiddenUnit.RECTIFIED)
+                .weightInit(WeightInit.DISTRIBUTION)
+                .dist(new UniformDistribution(0, 1))
+                .constrainGradientToUnitNorm(true)
+                .iterations(5)
+                .batchSize(10)
+                .lossFunction(LossFunctions.LossFunction.RMSE_XENT)
+                .learningRate(1e-1f)
+                .momentum(0.9)
+                //.momentumAfter(Collections.singletonMap(3, 0.9))
+                //.optimizationAlgo(OptimizationAlgorithm.CONJUGATE_GRADIENT)
+                .list(2)
+                .hiddenLayerSizes(100)
+                //.useDropConnect(true)
+                .override(1, new ClassifierOverride())
+                .build();
 
 		final MultiLayerNetwork model = new MultiLayerNetwork(conf);
 		model.init();
@@ -62,8 +82,24 @@ public class App
 			eval.eval(validation.getLabels(), predict);
 		}
 
-		System.out.printf("Score: %s\n", eval.stats());
-	}
+        System.out.printf("Score: %s\n", eval.stats());
+
+        System.out.println(conf.toJson());
+
+		Path newFile = Paths.get(Double.toString(eval.accuracy()));
+		try (BufferedWriter writer = Files.newBufferedWriter(newFile, Charset.defaultCharset()))
+		{
+			while (testIterator.hasNext())
+			{
+				DataSet test = testIterator.next();
+				INDArray predict = model.output(test.getFeatureMatrix());
+				for (int i = 0; i < predict.rows(); i++)
+				{
+					writer.write(predict.getRow(i).toString().trim());
+				}
+			}
+		}
+    }
 
 	static DataSetIterator getDataSetIterator(String resource) throws IOException, InterruptedException
 	{
